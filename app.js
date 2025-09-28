@@ -12,9 +12,7 @@ const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(cors({
-  origin: 'https://react-app-user-manage.vercel.app',    
-}));
+app.use(cors());
 
 // Routes
 app.use("/api/auth", authRoutes);
