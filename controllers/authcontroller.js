@@ -96,10 +96,12 @@ exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
     const { firstname, lastname, email, profile } = req.body;
-    // const isExist = await User.findOne({ email })
-    // if (isExist) {
-    //   return res.status(400).json({ message: 'Email already exist' })
-    // }
+     const isExist = await User.findOne({ email,_id:{
+      $ne:id
+     } })
+     if (isExist) {
+       return res.status(400).json({ message: 'Email already exist' })
+     }
     const updatedUser = await User.findByIdAndUpdate(
       id,
       { firstname, lastname, email, profile },
