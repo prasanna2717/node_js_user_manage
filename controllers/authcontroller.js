@@ -5,37 +5,22 @@ const { JWT_SECRET } = require("../security");
 exports.loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log(req.body)
 
-    // Check if user exists
-    let user = await User.findOne({ email });
-
+    const user = await User.findOne({ email });
     if (!user) {
-      // First-time login: create user with plain password
-      user = new User({
-        email,
-        password, // stored as plain text
-        firstname: "New",
-        lastname: "User",
-        profile: "https://example.com/default-profile.png"
-      });
-
-      await user.save();
-    } else {
-      // Existing user: compare plain password
-      if (user.password !== password) {
-        return res.status(400).json({ message: "Invalid credentialdcsdsds" });
-      }
+      return res.status(401).json({ message: 'Only admin account allowed or user not found.' });
     }
 
-    // Generate JWT token
+    if (user.password !== password) {
+      return res.status(401).json({ message: 'Invalid password.' });
+    }
     const token = jwt.sign(
       { id: user._id, email: user.email },
       JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: '1h' }
     );
 
-    res.json({
+    return res.status(200).json({
       token,
       user: {
         id: user._id,
@@ -44,12 +29,13 @@ exports.loginUser = async (req, res) => {
         email: user.email,
         profile: user.profile,
       },
-      message:'Login Successfully.'
+      message: 'Login successful.',
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    return res.status(500).json({ message: 'Server error. Please try again later.' });
   }
 };
+
 
 exports.getAllUsers = async (req, res) => {
   try {
@@ -110,10 +96,10 @@ exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
     const { firstname, lastname, email, profile } = req.body;
-    const isExist = await User.findOne({ email })
-    if (isExist) {
-      return res.status(400).json({ message: 'Email already exist' })
-    }
+    // const isExist = await User.findOne({ email })
+    // if (isExist) {
+    //   return res.status(400).json({ message: 'Email already exist' })
+    // }
     const updatedUser = await User.findByIdAndUpdate(
       id,
       { firstname, lastname, email, profile },
@@ -133,15 +119,20 @@ exports.updateUser = async (req, res) => {
 exports.deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log(id, "userId")
-    const deleteUser = await User.findByIdAndDelete(id);
-    console.log(deleteUser, "deleteUser")
-    if (!deleteUser) {
+
+    const user = await User.findById(id);
+    if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.json({ message: 'User data deleted.' });
+    if (user.email === 'eve.holt@reqres.in') {
+      return res.status(403).json({ message: "Admin account cannot be deleted." });
+    }
+
+    await User.findByIdAndDelete(id);
+    return res.status(200).json({ message: "User data deleted." });
+
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    return res.status(500).json({ message: "Server error. Please try again later." });
   }
 };
